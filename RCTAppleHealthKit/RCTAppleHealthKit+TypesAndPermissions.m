@@ -221,6 +221,11 @@
         return [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierDietaryWater];
     }
 
+    // workouts
+    if ([@"Workout" isEqualToString: key]){
+        return [HKObjectType workoutType];
+    }
+    
     // Sleep
     if([@"SleepAnalysis" isEqualToString:key]) {
         return [HKObjectType categoryTypeForIdentifier:HKCategoryTypeIdentifierSleepAnalysis];
