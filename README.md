@@ -106,7 +106,7 @@ Height Example Response
       * [getStepCount](/docs/getStepCount().md)
       * [getWeightSamples](/docs/getWeightSamples().md)
       * [getSamples](docs/getSamples().md)
-      * [getMindfulSession](docs/getMindfulSession().md) 
+      * [getMindfulSession](docs/getMindfulSession().md)
     * Write Methods
       * [saveBmi](/docs/saveBmi().md)
       * [saveHeight](/docs/saveHeight().md)
@@ -115,6 +115,7 @@ Height Example Response
       * [saveSteps](/docs/saveSteps().md)
       * [saveBodyFatPercentage](/docs/saveBodyFatPercentage().md)
       * [saveLeanBodyMass](/docs/saveLeanBodyMass().md)
+      * [saveWorkout]
   * [References](#references)
 
 ## Supported Apple Permissions
