@@ -139,6 +139,8 @@
                         double distance = [[sample totalDistance] doubleValueForUnit:[HKUnit mileUnit]];
                         NSString *type = [RCTAppleHealthKit stringForHKWorkoutActivityType:[sample workoutActivityType]];
 
+                        NSString *uuid = [sample UUID].UUIDString;
+                        
                         NSString *startDateString = [RCTAppleHealthKit buildISO8601StringFromDate:sample.startDate];
                         NSString *endDateString = [RCTAppleHealthKit buildISO8601StringFromDate:sample.endDate];
 
@@ -167,6 +169,7 @@
                                                @"device": device,
                                                @"distance" : @(distance),
                                                @"start" : startDateString,
+                                               @"uuid": uuid,
                                                @"end" : endDateString
                                                };
 
