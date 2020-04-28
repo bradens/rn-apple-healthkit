@@ -63,7 +63,6 @@
     if ([type isEqual:@"Running"] || [type isEqual:@"Cycling"]) {
         unit = [HKUnit mileUnit];
     }
-    NSLog(@"error getting samples: %@", [samplesType identifier]);
     [self fetchSamplesOfType:samplesType
                                 unit:unit
                            predicate:predicate

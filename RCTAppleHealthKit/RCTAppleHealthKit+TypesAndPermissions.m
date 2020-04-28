@@ -141,6 +141,11 @@
     } else if([@"FlightsClimbed" isEqualToString:key]) {
         return [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierFlightsClimbed];
     }
+    
+    // Vital Signs Identifiers
+    if ([@"HeartRate" isEqualToString: key]) {
+        return [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierHeartRate];
+    }
 
     // Nutrition Identifiers
     if([@"Biotin" isEqualToString:key]) {

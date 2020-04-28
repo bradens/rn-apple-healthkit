@@ -162,4 +162,28 @@
     }];
 }
 
+- (void)vitals_saveHeartRateSamples:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
+{
+    NSDate *time = [RCTAppleHealthKit dateFromOptions:input key:@"time" withDefault:nil];
+    double value = [RCTAppleHealthKit doubleFromOptions:input key:@"value" withDefault:0.0];
+    HKQuantityType *quantityType = [HKObjectType quantityTypeForIdentifier:HKQuantityTypeIdentifierHeartRate];
+    HKUnit *bpm = [HKUnit unitFromString:@"count/min"];
+    HKQuantity *quantity = [HKQuantity quantityWithUnit:bpm
+                                            doubleValue:value]; // FIXME take from input
+     
+    HKQuantitySample *sample =[HKQuantitySample quantitySampleWithType:quantityType
+                                    quantity:quantity
+                                   startDate:time
+                                     endDate:time];
+    
+    [self.healthStore saveObject:sample withCompletion:^(BOOL success, NSError * _Nullable error) {
+        if (!success) {
+            NSLog(@"An error occured saving the heart rate %@. The error was: %@.", sample, error);
+            callback(@[RCTMakeError(@"An error occured saving the sample", error, nil)]);
+            return;
+        }
+        callback(@[[NSNull null], sample.UUID.UUIDString]);
+    }];
+}
+
 @end
