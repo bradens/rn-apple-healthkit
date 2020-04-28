@@ -7,5 +7,5 @@
 - (void)vitals_getBloodPressureSamples:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
 - (void)vitals_getRespiratoryRateSamples:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
 - (void)vitals_saveHeartRateSamples:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
-
+- (void)vitals_getHeartRateSamplesForWorkout:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback;
 @end
