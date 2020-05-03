@@ -10,18 +10,10 @@
     HKUnit *count = [HKUnit countUnit];
     HKUnit *minute = [HKUnit minuteUnit];
     HKUnit *unit = [RCTAppleHealthKit hkUnitFromOptions:input key:@"unit" withDefault:[count unitDividedByUnit:minute]];
-    NSUInteger limit = [RCTAppleHealthKit uintFromOptions:input key:@"limit" withDefault:HKObjectQueryNoLimit];
-    BOOL ascending = [RCTAppleHealthKit boolFromOptions:input key:@"ascending" withDefault:false];
-    NSDate *startDate = [RCTAppleHealthKit dateFromOptions:input key:@"startDate" withDefault:nil];
-    NSDate *endDate = [RCTAppleHealthKit dateFromOptions:input key:@"endDate" withDefault:[NSDate date]];
     NSString *uuidString = [RCTAppleHealthKit stringFromOptions:input key:@"uuid" withDefault:nil];
+    NSSortDescriptor *timeSortDescriptor = [[NSSortDescriptor alloc] initWithKey:HKSampleSortIdentifierStartDate
+                                                                       ascending:YES];
 
-
-    if(startDate == nil){
-        callback(@[RCTMakeError(@"startDate is required in options", nil, nil)]);
-        return;
-    }
-    
     if(uuidString == nil) {
         callback(@[RCTMakeError(@"uuid is required in options", nil, nil)]);
         return;
@@ -29,28 +21,38 @@
     
     NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:uuidString];
     NSPredicate *workoutPredicate = [HKQuery predicateForObjectWithUUID:uuid];
-    [self fetchSamplesOfType:[HKObjectType workoutType] unit:nil predicate:workoutPredicate ascending:ascending limit:limit completion:^(NSArray *workouts, NSError *workoutErrors) {
-        
-        NSLog(@"FOUND WORKOUT");
-//        NSPredicate * predicate = [RCTAppleHealthKit ];
-    }];
+    void (^handlerBlock)(HKSampleQuery *query, NSArray *results, NSError *error);
+    handlerBlock = ^(HKSampleQuery *query, NSArray *results, NSError *error) {
+        NSPredicate *samplePredicate = [HKQuery predicateForObjectsFromWorkout:results[0]];
+        HKSampleQuery *samplesQuery = [[HKSampleQuery alloc] initWithSampleType:heartRateType predicate:samplePredicate limit:HKObjectQueryNoLimit sortDescriptors:@[timeSortDescriptor] resultsHandler:^(HKSampleQuery * _Nonnull query, NSArray<__kindof HKSample *> * _Nullable results, NSError * _Nullable error) {
+            NSLog(@"Found some heart rate samples");
+            NSMutableArray *data = [NSMutableArray arrayWithCapacity:1];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                for (HKQuantitySample *sample in results) {
+                    HKQuantity *quantity = sample.quantity;
+                    double value = [quantity doubleValueForUnit:unit];
 
-    NSPredicate * predicate = [RCTAppleHealthKit predicateForSamplesBetweenDates:startDate endDate:endDate];
+                    NSString *startDateString = [RCTAppleHealthKit buildISO8601StringFromDate:sample.startDate];
+                    NSString *endDateString = [RCTAppleHealthKit buildISO8601StringFromDate:sample.endDate];
 
-    [self fetchQuantitySamplesOfType:heartRateType
-                                unit:unit
-                           predicate:predicate
-                           ascending:ascending
-                               limit:limit
-                          completion:^(NSArray *results, NSError *error) {
-        if(results){
-            callback(@[[NSNull null], results]);
-            return;
-        } else {
-            callback(@[RCTJSErrorFromNSError(error)]);
-            return;
-        }
-    }];
+                    NSDictionary *elem = @{
+                            @"value" : @(value),
+                            @"startDate" : startDateString,
+                            @"workoutUuid" : uuidString,
+                            @"endDate" : endDateString,
+                    };
+
+                    [data addObject:elem];
+                }
+                callback(@[[NSNull null], data]);
+            });
+        }];
+        [self.healthStore executeQuery:samplesQuery];
+    };
+    
+    // Execute the query to get the workout
+    HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:[HKObjectType workoutType] predicate:workoutPredicate limit:HKObjectQueryNoLimit sortDescriptors:nil resultsHandler:handlerBlock];
+    [self.healthStore executeQuery:query];
 }
 
 - (void)vitals_getHeartRateSamples:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
@@ -237,14 +239,14 @@
     } else {
         NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:uuidString];
         NSPredicate *workoutPredicate = [HKQuery predicateForObjectWithUUID:uuid];
-        [self fetchSamplesOfType:[HKObjectType workoutType] unit:nil predicate:workoutPredicate ascending:NO limit:HKObjectQueryNoLimit completion:^(NSArray *workouts, NSError *workoutErrors) {
-            NSLog(@"FOUND WORKOUT");
-            HKWorkout *workout = workouts[0];
-            [self.healthStore addSamples:[NSArray arrayWithObject:sample] toWorkout:workout completion:^(BOOL success, NSError * _Nullable error) {
-                NSLog(@"ADDED SAMPLES TO WORKOUT");
+        void (^handlerBlock)(HKSampleQuery *query, NSArray *results, NSError *error);
+        handlerBlock = ^(HKSampleQuery *query, NSArray *results, NSError *error) {
+            [self.healthStore addSamples:[NSArray arrayWithObject:sample] toWorkout:results[0] completion:^(BOOL success, NSError * _Nullable error) {
                 callback(@[[NSNull null], sample.UUID.UUIDString]);
             }];
-        }];
+        };
+        HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:[HKObjectType workoutType] predicate:workoutPredicate limit:HKObjectQueryNoLimit sortDescriptors:nil resultsHandler:handlerBlock];
+        [self.healthStore executeQuery:query];
     }
 }
 

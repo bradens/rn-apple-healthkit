@@ -201,6 +201,11 @@ RCT_EXPORT_METHOD(getHeartRateSamples:(NSDictionary *)input callback:(RCTRespons
     [self vitals_getHeartRateSamples:input callback:callback];
 }
 
+RCT_EXPORT_METHOD(getHeartRateSamplesForWorkout:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback)
+{
+    [self vitals_getHeartRateSamplesForWorkout:input callback:callback];
+}
+
 RCT_EXPORT_METHOD(saveHeartRateSamples:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback)
 {
     [self vitals_saveHeartRateSamples:input callback:callback];
@@ -268,7 +273,7 @@ RCT_EXPORT_METHOD(getMindfulSession:(NSDictionary *)input callback:(RCTResponseS
 
 RCT_EXPORT_METHOD(saveWorkout:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback)
 {
-	[self workout_saveWorkout:input callback:callback];
+    [self workout_saveWorkout:input callback:callback];
 }
 
 
