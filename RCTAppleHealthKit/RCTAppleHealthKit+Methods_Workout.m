@@ -88,7 +88,7 @@
         });
     };
     // Execute the query to get the workout
-    HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:[HKObjectType workoutType] predicate:workoutPredicate limit:HKObjectQueryNoLimit sortDescriptors:timeSortDescriptor resultsHandler:handlerBlock];
+    HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:[HKObjectType workoutType] predicate:workoutPredicate limit:HKObjectQueryNoLimit sortDescriptors:@[timeSortDescriptor] resultsHandler:handlerBlock];
     [self.healthStore executeQuery:query];
 }
 //
