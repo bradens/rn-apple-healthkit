@@ -40,48 +40,152 @@
     }];
 }
 
+- (NSArray*)serializeHeartRateSamples:(NSArray *)samples uuid:(NSString*)uuid
+{
+    HKUnit *count = [HKUnit countUnit];
+    HKUnit *minute = [HKUnit minuteUnit];
+    HKUnit *unit = [count unitDividedByUnit:minute];
+    NSMutableArray *data = [NSMutableArray arrayWithCapacity:1];
+    for (HKQuantitySample *sample in samples) {
+        HKQuantity *quantity = sample.quantity;
+        double value = [quantity doubleValueForUnit:unit];
+        NSString *startDateString = [RCTAppleHealthKit buildISO8601StringFromDate:sample.startDate];
+        NSDictionary *elem = @{
+                @"value" : @(value),
+                @"workoutUuid" : uuid,
+                @"timestamp" : startDateString,
+        };
+        [data addObject:elem];
+    }
+    return data;
+}
 
+- (void)workout_getWorkoutsWithCalories:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
+{
+    NSDate *startDate = [RCTAppleHealthKit dateFromOptions:input key:@"startDate" withDefault:[NSDate date]];
+    NSDate *endDate = [RCTAppleHealthKit dateFromOptions:input key:@"endDate" withDefault:[NSDate date]];
+
+    NSPredicate *workoutPredicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[[HKQuery predicateForSamplesWithStartDate:startDate endDate:endDate options:HKQueryOptionNone], [HKQuery predicateForWorkoutsWithOperatorType:NSGreaterThanPredicateOperatorType totalEnergyBurned:[HKQuantity quantityWithUnit:[HKUnit kilocalorieUnit] doubleValue:0]]]];
+
+    void (^handlerBlock)(HKSampleQuery *query, NSArray *results, NSError *error);
+    handlerBlock = ^(HKSampleQuery *query, NSArray *workouts, NSError *error) {
+        NSMutableArray *data = [NSMutableArray arrayWithCapacity:1];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            for (HKWorkout *workout in workouts) {
+                NSDictionary *workoutObject = @{
+                    @"activityId" : [NSNumber numberWithInt:[workout workoutActivityType]],
+                    @"activityName" : [RCTAppleHealthKit stringForHKWorkoutActivityType:[workout workoutActivityType]],
+                    @"calories" : @([[workout totalEnergyBurned] doubleValueForUnit:[HKUnit kilocalorieUnit]]),
+                    @"distance" : @([[workout totalDistance] doubleValueForUnit:[HKUnit mileUnit]]),
+                    @"start" : [RCTAppleHealthKit buildISO8601StringFromDate:workout.startDate],
+                    @"uuid": [workout UUID].UUIDString,
+                    @"end" : [RCTAppleHealthKit buildISO8601StringFromDate:workout.startDate],
+                };
+                [data addObject:workoutObject];
+            }
+            callback(@[[NSNull null], data]);
+        });
+    };
+    // Execute the query to get the workout
+    HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:[HKObjectType workoutType] predicate:workoutPredicate limit:HKObjectQueryNoLimit sortDescriptors:nil resultsHandler:handlerBlock];
+    [self.healthStore executeQuery:query];
+}
+//
 
 //- (void)workout_getWorkoutsWithHeartRateData:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
 //{
-//    HKWorkoutActivityType activityType = [RCTAppleHealthKit hkWorkoutActivityTypeFromOptions:input key:@"type" withDefault:HKWorkoutActivityTypeOther];
-//
-//    HKUnit *unit = [RCTAppleHealthKit hkUnitFromOptions:input key:@"unit" withDefault:[HKUnit countUnit]];
-//    NSUInteger limit = [RCTAppleHealthKit uintFromOptions:input key:@"limit" withDefault:HKObjectQueryNoLimit];
-//    BOOL ascending = [RCTAppleHealthKit boolFromOptions:input key:@"ascending" withDefault:false];
-//    NSString *type = [RCTAppleHealthKit stringFromOptions:input key:@"type" withDefault:@"Walking"];
 //    NSDate *startDate = [RCTAppleHealthKit dateFromOptions:input key:@"startDate" withDefault:[NSDate date]];
 //    NSDate *endDate = [RCTAppleHealthKit dateFromOptions:input key:@"endDate" withDefault:[NSDate date]];
-//    NSPredicate *predicate = [HKQuery predicateForSamplesWithStartDate:startDate endDate:endDate options:HKQueryOptionStrictStartDate];
-//    HKSampleType *samplesType = [HKObjectType workoutType];
-//    [self fetchSamplesOfType:samplesType
-//                                unit:unit
-//                           predicate:predicate
-//                           ascending:ascending
-//                               limit:limit
-//                          completion:^(NSArray *results, NSError *error) {
-//                              if(results){
-//                                  // Here we have the workouts
-//                                  // Now reject any that don't have heartrate samples
-//                                  HKWorkout *workout = results[0];
-//                                  NSPredicate *samplesPredicate [HKQuery predicateForObjectWithUUID:[workout UUID]];
-//                                  for (int i = 0; i <= results.count; i++)
-//                                  {
-//                                      [self fetchQuantitySamplesOfType:HKQuantityTypeIdentifierHeartRate unit:unit predicate:samplesPredicate ascending:NO limit:HKObjectQueryNoLimit completion:^(NSArray *innerResults, NSError *innerError) {
-//                                          NSLog(@"Now we are in the HR completion handler");
-//                                      }];
-//                                  }
 //
-//                                  callback(@[[NSNull null], results]);
-//                                  return;
-//                              } else {
-//                                  NSLog(@"error getting samples: %@", error);
-//                                  callback(@[RCTMakeError(@"error getting samples", nil, nil)]);
-//                                  return;
-//                              }
-//                          }];
+//    NSPredicate *workoutPredicate = [HKQuery predicateForSamplesWithStartDate:startDate endDate:endDate options:HKQueryOptionNone];
+//    HKQuantityType *heartRateType = [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierHeartRate];
+//
+//    void (^handlerBlock)(HKSampleQuery *query, NSArray *results, NSError *error);
+//    handlerBlock = ^(HKSampleQuery *query, NSArray *workouts, NSError *error) {
+//        NSPredicate *hrPredicate = [HKQuery predicateForObjectsWithUUIDs:[[workouts valueForKey:@"UUID"]];
+//        NSMutableArray *workoutsData = [NSMutableArray arrayWithCapacity:1];
+//        NSMutableArray *data = [NSMutableArray arrayWithCapacity:1];
+//        HKSampleQuery *samplesQuery = [[HKSampleQuery alloc] initWithSampleType:heartRateType predicate:hrPredicate limit:HKObjectQueryNoLimit sortDescriptors:nil resultsHandler:^(HKSampleQuery * _Nonnull query, NSArray<__kindof HKSample *> * _Nullable results, NSError * _Nullable error) {
+//                    dispatch_async(dispatch_get_main_queue(), ^{
+//                        for (HKWorkout *workout in workouts) {
+//                            NSDictionary *workoutObject = @{
+//                                @"activityId" : [NSNumber numberWithInt:[workout workoutActivityType]],
+//                                @"activityName" : [RCTAppleHealthKit stringForHKWorkoutActivityType:[workout workoutActivityType]],
+//                                @"calories" : @([[workout totalEnergyBurned] doubleValueForUnit:[HKUnit kilocalorieUnit]]),
+//                                @"distance" : @([[workout totalDistance] doubleValueForUnit:[HKUnit mileUnit]]),
+//                                @"start" : [RCTAppleHealthKit buildISO8601StringFromDate:workout.startDate],
+//                                @"uuid": [workout UUID].UUIDString,
+//                                @"end" : [RCTAppleHealthKit buildISO8601StringFromDate:workout.startDate],
+//                            };
+//                            [workoutsData addObject:workoutObject];
+//                        }
+//                        [data addObject:workoutsData];
+//                        [data addObject:[self serializeHeartRateSamples:results uuid:@"test"]];
+//                        callback(@[[NSNull null], data]);
+//                    });
+//                }];
+//                [self.healthStore executeQuery:samplesQuery];
+//            };
+//
+//    // Execute the query to get the workout
+//    HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:[HKObjectType workoutType] predicate:workoutPredicate limit:HKObjectQueryNoLimit sortDescriptors:nil resultsHandler:handlerBlock];
+//    [self.healthStore executeQuery:query];
 //}
+//
 
+//- (void)workout_getWorkoutsWithHeartRateData:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback
+//{
+//    NSDate *startDate = [RCTAppleHealthKit dateFromOptions:input key:@"startDate" withDefault:[NSDate date]];
+//    NSDate *endDate = [RCTAppleHealthKit dateFromOptions:input key:@"endDate" withDefault:[NSDate date]];
+//    NSPredicate *workoutPredicate = [HKQuery predicateForSamplesWithStartDate:startDate endDate:endDate options:HKQueryOptionNone];
+//    HKQuantityType *heartRateType = [HKQuantityType quantityTypeForIdentifier:HKQuantityTypeIdentifierHeartRate];
+//
+//    void (^handlerBlock)(HKSampleQuery *query, NSArray *results, NSError *error);
+//
+//    __block int workoutProcessCount = 0;
+//
+//    handlerBlock = ^(HKSampleQuery *query, NSArray *workouts, NSError *error) {
+//        NSMutableArray *data = [NSMutableArray arrayWithCapacity:1];
+//        dispatch_async(dispatch_get_main_queue(), ^{
+//            for (HKWorkout *workout in workouts) {
+//                NSPredicate *hrPredicate = [HKQuery predicateForObjectsFromWorkout:workout];
+//                HKSampleQuery *samplesQuery = [[HKSampleQuery alloc] initWithSampleType:heartRateType predicate:hrPredicate limit:HKObjectQueryNoLimit sortDescriptors:nil resultsHandler:^(HKSampleQuery * _Nonnull query, NSArray<__kindof HKSample *> * _Nullable results, NSError * _Nullable error) {
+//                    dispatch_async(dispatch_get_main_queue(), ^{
+//                        if ([results count] > 5) {
+//                            // If we have more than 5 heart rate samples, use it.
+//                            // Add this workout to the result set
+//                            NSDictionary *workoutObject = @{
+//                                                   @"activityId" : [NSNumber numberWithInt:[workout workoutActivityType]],
+//                                                   @"activityName" : [RCTAppleHealthKit stringForHKWorkoutActivityType:[workout workoutActivityType]],
+//                                                   @"calories" : @([[workout totalEnergyBurned] doubleValueForUnit:[HKUnit kilocalorieUnit]]),
+//                                                   @"distance" : @([[workout totalDistance] doubleValueForUnit:[HKUnit mileUnit]]),
+//                                                   @"start" : [RCTAppleHealthKit buildISO8601StringFromDate:workout.startDate],
+//                                                   @"uuid": [workout UUID].UUIDString,
+//                                                   @"end" : [RCTAppleHealthKit buildISO8601StringFromDate:workout.startDate],
+//                                                   @"heartRateSamples": [self serializeHeartRateSamples:results uuid:[workout UUID].UUIDString]
+//                                                   };
+//
+//                            [data addObject:workoutObject];
+//                        }
+//
+//                        workoutProcessCount++;
+//
+//                        if (workoutProcessCount >= workouts.count) {
+//                            callback(@[[NSNull null], data]);
+//                        }
+//                    });
+//                }];
+//                [self.healthStore executeQuery:samplesQuery];
+//            };
+//        });
+//    };
+//    dispatch_async(dispatch_get_main_queue(), ^{
+//
+//    // Execute the query to get the workout
+//    HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:[HKObjectType workoutType] predicate:workoutPredicate limit:HKObjectQueryNoLimit sortDescriptors:nil resultsHandler:handlerBlock];
+//    [self.healthStore executeQuery:query];
+//    });
+//}
 
 
 -(HKQuantity *)quantityFromOptions:(NSDictionary *)input valueKey:(NSString *)valueKey unitKey:(NSString *)unitKey {

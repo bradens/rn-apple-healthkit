@@ -25,7 +25,6 @@
     handlerBlock = ^(HKSampleQuery *query, NSArray *results, NSError *error) {
         NSPredicate *samplePredicate = [HKQuery predicateForObjectsFromWorkout:results[0]];
         HKSampleQuery *samplesQuery = [[HKSampleQuery alloc] initWithSampleType:heartRateType predicate:samplePredicate limit:HKObjectQueryNoLimit sortDescriptors:@[timeSortDescriptor] resultsHandler:^(HKSampleQuery * _Nonnull query, NSArray<__kindof HKSample *> * _Nullable results, NSError * _Nullable error) {
-            NSLog(@"Found some heart rate samples");
             NSMutableArray *data = [NSMutableArray arrayWithCapacity:1];
             dispatch_async(dispatch_get_main_queue(), ^{
                 for (HKQuantitySample *sample in results) {

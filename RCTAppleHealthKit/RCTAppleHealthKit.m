@@ -275,6 +275,10 @@ RCT_EXPORT_METHOD(saveWorkout:(NSDictionary *)input callback:(RCTResponseSenderB
 {
     [self workout_saveWorkout:input callback:callback];
 }
+RCT_EXPORT_METHOD(getWorkoutsWithCalories:(NSDictionary *)input callback:(RCTResponseSenderBlock)callback)
+{
+    [self workout_getWorkoutsWithCalories:input callback:callback];
+}
 
 
 - (void)isHealthKitAvailable:(RCTResponseSenderBlock)callback
