@@ -64,7 +64,8 @@
 {
     NSDate *startDate = [RCTAppleHealthKit dateFromOptions:input key:@"startDate" withDefault:[NSDate date]];
     NSDate *endDate = [RCTAppleHealthKit dateFromOptions:input key:@"endDate" withDefault:[NSDate date]];
-
+    NSSortDescriptor *timeSortDescriptor = [[NSSortDescriptor alloc] initWithKey:HKSampleSortIdentifierStartDate
+                                                                       ascending:YES];
     NSPredicate *workoutPredicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[[HKQuery predicateForSamplesWithStartDate:startDate endDate:endDate options:HKQueryOptionNone], [HKQuery predicateForWorkoutsWithOperatorType:NSGreaterThanPredicateOperatorType totalEnergyBurned:[HKQuantity quantityWithUnit:[HKUnit kilocalorieUnit] doubleValue:0]]]];
 
     void (^handlerBlock)(HKSampleQuery *query, NSArray *results, NSError *error);
@@ -87,7 +88,7 @@
         });
     };
     // Execute the query to get the workout
-    HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:[HKObjectType workoutType] predicate:workoutPredicate limit:HKObjectQueryNoLimit sortDescriptors:nil resultsHandler:handlerBlock];
+    HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:[HKObjectType workoutType] predicate:workoutPredicate limit:HKObjectQueryNoLimit sortDescriptors:timeSortDescriptor resultsHandler:handlerBlock];
     [self.healthStore executeQuery:query];
 }
 //
