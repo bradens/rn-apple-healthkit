@@ -65,7 +65,7 @@
     NSDate *startDate = [RCTAppleHealthKit dateFromOptions:input key:@"startDate" withDefault:[NSDate date]];
     NSDate *endDate = [RCTAppleHealthKit dateFromOptions:input key:@"endDate" withDefault:[NSDate date]];
     NSSortDescriptor *timeSortDescriptor = [[NSSortDescriptor alloc] initWithKey:HKSampleSortIdentifierStartDate
-                                                                       ascending:YES];
+                                                                       ascending:NO];
     NSPredicate *workoutPredicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[[HKQuery predicateForSamplesWithStartDate:startDate endDate:endDate options:HKQueryOptionNone], [HKQuery predicateForWorkoutsWithOperatorType:NSGreaterThanPredicateOperatorType totalEnergyBurned:[HKQuantity quantityWithUnit:[HKUnit kilocalorieUnit] doubleValue:0]]]];
 
     void (^handlerBlock)(HKSampleQuery *query, NSArray *results, NSError *error);
