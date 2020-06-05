@@ -80,7 +80,7 @@
                     @"distance" : @([[workout totalDistance] doubleValueForUnit:[HKUnit mileUnit]]),
                     @"start" : [RCTAppleHealthKit buildISO8601StringFromDate:workout.startDate],
                     @"uuid": [workout UUID].UUIDString,
-                    @"end" : [RCTAppleHealthKit buildISO8601StringFromDate:workout.startDate],
+                    @"end" : [RCTAppleHealthKit buildISO8601StringFromDate:workout.endDate],
                 };
                 [data addObject:workoutObject];
             }
