@@ -80,6 +80,7 @@
                     @"distance" : @([[workout totalDistance] doubleValueForUnit:[HKUnit mileUnit]]),
                     @"start" : [RCTAppleHealthKit buildISO8601StringFromDate:workout.startDate],
                     @"uuid": [workout UUID].UUIDString,
+                    @"source": [[workout source] name],
                     @"end" : [RCTAppleHealthKit buildISO8601StringFromDate:workout.endDate],
                 };
                 [data addObject:workoutObject];
@@ -87,6 +88,8 @@
             callback(@[[NSNull null], data]);
         });
     };
+    
+    
     // Execute the query to get the workout
     HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:[HKObjectType workoutType] predicate:workoutPredicate limit:HKObjectQueryNoLimit sortDescriptors:@[timeSortDescriptor] resultsHandler:handlerBlock];
     [self.healthStore executeQuery:query];
